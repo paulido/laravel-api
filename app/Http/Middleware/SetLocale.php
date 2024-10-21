@@ -17,13 +17,13 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         $locale = $request->header('Accept-Language');
-        $locales = ['en', 'es', 'fr'];
+        $locales = config('app')['languages'];
         // Fallback to 'en' if the header is not set or invalid
         $locale = in_array($locale, $locales) ? $locale : 'en';
-
         App::setLocale($locale);
 
+        
         return $next($request);
     }
-        
+
 }

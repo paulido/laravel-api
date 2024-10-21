@@ -13,4 +13,5 @@ return [
     'unable_to_send_reset_link' => 'Unable to send reset link.',
     'password_reset_successful' => 'Password reset successful.',
     'unable_to_reset_password' => 'Unable to reset password.',
+    'cfa' => 'West African CFA Franc',
 ];

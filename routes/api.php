@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['language'])->group(function () {
@@ -11,15 +12,15 @@ Route::middleware(['language'])->group(function () {
     Route::post("login", [AuthController::class, "login"]);
     Route::post('/password/email', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.reset');
-    
+
     Route::get('/test', function (Request $request) {
-        return response()->json(__('messages.login_successful'));
+        return response()->json(formatCurrency(5000));
     });
 
     // Authenticated Routes
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get("logout", [AuthController::class, "logout"]);
-        
+
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
