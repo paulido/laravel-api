@@ -22,110 +22,106 @@ class AuthController extends Controller
     ];
 
     public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), $this->rules);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 400,
-                'message' => 'Data invalid',
-                'errors' => $validator->errors(),
-            ], 400);
-        }
-
-        try {
-            $user = User::create([
-                'username' => $request->username,
-                'email' => $request->email,
-                'password' => bcrypt($request->password),
-            ]);
-
-            $defaultRole = Role::firstOrCreate(['name' => 'user']);
-            $user->assignRole($defaultRole); // Assign role as a string if it's a string role name.
-
-            return response()->json([
-                'status' => 201,
-                'message' => 'Request successful',
-                'data' => ['user' => $user],
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'An error occurred while creating the user.',
-                'errors' => [$e->getMessage()],
-            ], 500);
-        }
+{
+    $validator = Validator::make($request->all(), $this->rules);
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 400,
+            'message' => __('messages.data_invalid'),
+            'errors' => $validator->errors(),
+        ], 400);
     }
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            "email" => "required|email|max:255",
-            "password" => "required",
+    try {
+        $user = User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json([
-                'status' => 401,
-                'message' => 'Invalid credentials',
-                'errors' => ['The provided email or password is incorrect.']
-            ], 401);
-        }
+        $defaultRole = Role::firstOrCreate(['name' => 'user']);
+        $user->assignRole($defaultRole);
 
-        $user = Auth::user();
-        $token = $user->createToken('token-name')->plainTextToken; // No need to pass roles here
         return response()->json([
-            'status' => 200,
-            'message' => 'Successfully logged in',
-            'data' => ['token' => $token],
-        ], 200);
+            'status' => 201,
+            'message' => __('messages.request_successful'),
+            'data' => ['user' => $user],
+        ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'message' => __('messages.user_creation_error'),
+            'errors' => [$e->getMessage()],
+        ], 500);
+    }
+}
+
+public function login(Request $request)
+{
+    $request->validate([
+        "email" => "required|email|max:255",
+        "password" => "required",
+    ]);
+
+    if (!Auth::attempt($request->only('email', 'password'))) {
+        return response()->json([
+            'status' => 401,
+            'message' => __('messages.invalid_credentials'),
+        ], 401);
     }
 
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json([
-            'status' => 200,
-            'message' => 'Successfully logged out',
-        ], 200);
-    }
+    $user = Auth::user();
+    $token = $user->createToken('token-name', $user->getRoleNames()->toArray())->plainTextToken;
+    return response()->json([
+        'status' => 200,
+        'message' => __('messages.login_successful'),
+        'data' => ['token' => $token],
+    ], 200);
+}
 
-    public function sendResetLinkEmail(Request $request)
+public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+    return response()->json([
+        'status' => 200,
+        'message' => __('messages.logout_successful'),
+    ], 200);
+}
+
+public function sendResetLinkEmail(Request $request)
 {
     $request->validate(['email' => 'required|email']);
 
     $response = Password::sendResetLink($request->only('email'), function ($user, $token) {
-        // Generate the URL for the Angular app
         $url = env('APP_URL') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
-        
-        // Send the email (use Laravel's built-in notification or customize it)
-        // For example:
         Mail::to($user->email)->send(new \App\Mail\ResetPasswordMail($url));
     });
 
     return $response == Password::RESET_LINK_SENT
-        ? response()->json(['status' => 'Reset link sent.'], 200)
-        : response()->json(['email' => 'Unable to send reset link.'], 400);
+        ? response()->json(['status' => __('messages.reset_link_sent')], 200)
+        : response()->json(['email' => __('messages.unable_to_send_reset_link')], 400);
 }
 
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string|confirmed',
-            'token' => 'required',
-        ]);
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|string|confirmed',
+        'token' => 'required',
+    ]);
 
-        $response = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->password = Hash::make($password);
-                $user->save();
-                event(new PasswordReset($user));
-            }
-        );
+    $response = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->password = Hash::make($password);
+            $user->save();
+            event(new PasswordReset($user));
+        }
+    );
 
-        return $response == Password::PASSWORD_RESET
-            ? response()->json(['status' => 'Password reset successful.'], 200)
-            : response()->json(['email' => 'Unable to reset password.'], 400);
-    }
+    return $response == Password::PASSWORD_RESET
+        ? response()->json(['status' => __('messages.password_reset_successful')], 200)
+        : response()->json(['email' => __('messages.unable_to_reset_password')], 400);
+}
+
 }

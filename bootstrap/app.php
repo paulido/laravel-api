@@ -1,12 +1,11 @@
 <?php
 
-use GuzzleHttp\Exception\ServerException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,7 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         
-        //
+   
+        $middleware->alias([
+            // Sanctum
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
+
+            // Spatie
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'language' => \App\Http\Middleware\SetLocale::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response) {
@@ -27,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     return response()->json([
                         'message' => 'An error has occured. Please try again later',
                     ], 400);
-                case 404:
+                case 404 || 405 || 403:
                     return response()->json([
                         'message' => 'Not found',
                     ], 404);
