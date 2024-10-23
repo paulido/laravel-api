@@ -2,23 +2,20 @@
 
 use Illuminate\Support\Facades\App;
 
-function formatCurrency($amount)
-{
-    $currency = '';
-    $local = App::getLocale();
-    switch ($local) {
-        case 'en':
-            $currency = 'USD';
-            break;
-        case 'fr':
-            $currency = 'XOF';
-            break;
-        default:
-            $currency = 'XOF';
+
+if (!function_exists('formatCurrency2')) {
+
+    function formatCurrency2($amount)
+    {
+        $currency = '';
+        $local = App::getLocale();
+        $currencyMap = [
+            'en' => 'USD',
+            'fr' => 'XOF',
+        ];
+        $currency = $currencyMap[$local] ?? 'XOF';
+        $currencies = config('currencies');
+        $symbol = $currencies[$currency]['symbol'] ?? '$';
+        return $symbol . number_format($amount, 2);
     }
-
-    $currencies = config('currencies');
-    $symbol = $currencies[$currency]['symbol'] ?? '$';
-
-    return $symbol . number_format($amount, 2);
 }

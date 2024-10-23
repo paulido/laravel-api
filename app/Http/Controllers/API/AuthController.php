@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\LoginAttempt;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +65,15 @@ public function login(Request $request)
     ]);
 
     if (!Auth::attempt($request->only('email', 'password'))) {
+
+        LoginAttempt::create(['email' => $request->email]);
+        $attempts = LoginAttempt::where('email', $request->email)
+            ->where('created_at', '>=', now()->subMinutes(15))->count(); // count login attempts in last 15 minuites
+
+        if ($attempts >= 3) {
+            return response()->json(['message' => 'Trop de tentatives échouées. Veuillez réessayer plus tard.'], 429);
+        }
+
         return response()->json([
             'status' => 401,
             'message' => __('messages.invalid_credentials'),
@@ -75,7 +85,7 @@ public function login(Request $request)
     return response()->json([
         'status' => 200,
         'message' => __('messages.login_successful'),
-        'data' => ['token' => $token],
+        'data' => ['token' => $token, 'user' => $user],
     ], 200);
 }
 
@@ -122,6 +132,10 @@ public function resetPassword(Request $request)
     return $response == Password::PASSWORD_RESET
         ? response()->json(['status' => __('messages.password_reset_successful')], 200)
         : response()->json(['email' => __('messages.unable_to_reset_password')], 400);
+}
+
+public function money(){
+    return response()->json(formatCurrency2(5000));
 }
 
 }

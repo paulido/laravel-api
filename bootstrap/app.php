@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
@@ -31,23 +32,24 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response) {
-            $status = $response->getStatusCode();
-            switch($status){
-                case 500:
-                    return response()->json([
-                        'message' => 'An error has occured. Please try again later',
-                    ], 400);
-                case 404 || 405 || 403:
-                    return response()->json([
-                        'message' => 'Not found',
-                    ], 404);
-                case 401:
-                    return response()->json([
-                        'message' => 'Not authenticated',
-                    ], 401);
-                default:
-                    return $response;
-            }
+            // $status = $response->getStatusCode();
+            // switch($status){
+            //     case 500:
+            //         // Log::error('Server error IDO', $response->getContent());
+            //         return response()->json([
+            //             'message' => 'An error has occured. Please try again later',
+            //         ], 400);
+            //     case 404 || 405 || 403:
+            //         return response()->json([
+            //             'message' => 'Not found',
+            //         ], 404);
+            //     case 401:
+            //         return response()->json([
+            //             'message' => 'Not authenticated',
+            //         ], 401);
+            //     default:
+            //         return $response;
+            // }
         });
         
 
