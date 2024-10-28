@@ -144,21 +144,10 @@ public function autorisation(Request $request) {
         }
     }
 
-    return response()->json($hasPermission);
-}
-
-
-public function money(){
-    return response()->json(formatCurrency2(5000));
-}
-
-public function index(){
-    $users = User::all();
-    return response()->json(
-       [
-        
-        'data' => ["users" => $users]
+    return response()->json([
+        'data' => ["autorisation" => $hasPermission]
     ]);
 }
+
 
 }
