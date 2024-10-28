@@ -66,13 +66,13 @@ public function login(Request $request)
 
     if (!Auth::attempt($request->only('email', 'password'))) {
 
-        LoginAttempt::create(['email' => $request->email]);
-        $attempts = LoginAttempt::where('email', $request->email)
-            ->where('created_at', '>=', now()->subMinutes(15))->count(); // count login attempts in last 15 minuites
+        // LoginAttempt::create(['email' => $request->email]);
+        // $attempts = LoginAttempt::where('email', $request->email)
+        //     ->where('created_at', '>=', now()->subMinutes(15))->count(); // count login attempts in last 15 minuites
 
-        if ($attempts >= 3) {
-            return response()->json(['message' => 'Trop de tentatives échouées. Veuillez réessayer plus tard.'], 429);
-        }
+        // if ($attempts >= 3) {
+        //     return response()->json(['message' => 'Trop de tentatives échouées. Veuillez réessayer plus tard.'], 429);
+        // }
 
         return response()->json([
             'status' => 401,
@@ -134,8 +134,31 @@ public function resetPassword(Request $request)
         : response()->json(['email' => __('messages.unable_to_reset_password')], 400);
 }
 
+public function autorisation(Request $request) {
+    $roles = $request->get('roles', []);
+    $hasPermission = false;
+    foreach ($roles as $role) {
+        if ($request->user()->tokenCan($role)) {
+            $hasPermission = true;
+            break; // No need to check further if one role is valid
+        }
+    }
+
+    return response()->json($hasPermission);
+}
+
+
 public function money(){
     return response()->json(formatCurrency2(5000));
+}
+
+public function index(){
+    $users = User::all();
+    return response()->json(
+       [
+        
+        'data' => ["users" => $users]
+    ]);
 }
 
 }

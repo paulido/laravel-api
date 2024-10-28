@@ -18,6 +18,7 @@ Route::middleware(['language'])->group(function () {
     //     return response()->json(formatCurrency2(5000));
     // });
     Route::get("test", [AuthController::class, "money"]);
+    Route::get("users", [AuthController::class, "index"]);
     Route::get('/error', function (Request $request) {
         try {
             // This will throw a DivisionByZeroError
@@ -33,6 +34,7 @@ Route::middleware(['language'])->group(function () {
     // Authenticated Routes
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get("logout", [AuthController::class, "logout"]);
+        Route::post("autorisation", [AuthController::class, "autorisation"]);
 
         Route::get('/user', function (Request $request) {
             return $request->user();
