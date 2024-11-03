@@ -11,5 +11,9 @@ return [
     'unable_to_send_reset_link' => 'Impossible d\'envoyer le lien de réinitialisation.',
     'password_reset_successful' => 'Réinitialisation du mot de passe réussie.',
     'unable_to_reset_password' => 'Impossible de réinitialiser le mot de passe.',
+    'link_expired' => 'Lien expiré',
+    'account_activated' => 'Compte activé avec succès',
+    'must_verify_email' => 'Veuillez vérifier votre boîte de réception pour activer votre compte',
+    'will_send_email' => 'Veuillez patientez vous recevrez un email',
     'cfa' => 'Franc CFA d\'Afrique de l\'Ouest',
 ];

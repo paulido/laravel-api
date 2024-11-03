@@ -32,7 +32,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        return User::all();
+        $users = User::all();
+        return response()->json([
+            "status" => 200,
+            "data" => ['users' => $users]
+        ], 200);
     }
 
     /**
@@ -56,7 +60,11 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        return User::findOrFail($id);
+        $user = User::findOrFail($id);
+        return response()->json([
+            "status" => 200,
+            "data" => ['user' => $user]
+        ], 200);
     }
 
     /**
@@ -78,7 +86,11 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $user = User::create($request->all());
-        return response()->json($user, 201);
+        return response()->json([
+            "status" => 201,
+            "message" => __('messages.request_successful'),
+            "data" => ['user' => $user]
+        ], 201);
     }
 
     /**
@@ -107,7 +119,11 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update($request->all());
-        return response()->json($user);
+        return response()->json([
+            "satus" => 200,
+            "message" => __('messages.request_successful'),
+            "data" => ['user' => $user]
+        ], 200);
     }
 
     /**
@@ -127,6 +143,9 @@ class UserController extends Controller
     public function destroy($id)
     {
         User::findOrFail($id)->delete();
-        return response()->noContent();
+        return response()->json([
+            "status" => 200,
+            "message" => __('messages.user_deleted'),
+        ], 200);
     }
 }

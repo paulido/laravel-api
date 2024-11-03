@@ -1,25 +1,39 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 
-Route::middleware(['language'])->group(function () {
+
+// Route::middleware(['language'])->group(function () {
 
     // Public Routes
     Route::post("register", [AuthController::class, "register"]);
     Route::post("login", [AuthController::class, "login"]);
     Route::post('/password/email', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+    // Handle passwork link in email clicked
+    Route::post('/password/email', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.reset');
+    Route::resource('users', UserController::class);
+
+    // Handle when user click link in email
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware('signed')->name('verification.verify');
+
+    // Resent verification email link
+    Route::post('/resent-email', [AuthController::class, 'resendVerficationEmail'])->middleware('throttle:6:1');
+
 
     // Route::get('/test', function (Request $request) {
     //     return response()->json(formatCurrency2(5000));
     // });
     Route::get("test", [AuthController::class, "money"]);
-    Route::get("users", [AuthController::class, "index"]);
+    Route::get("users", [UserController::class, "index"]);
     Route::get('/error', function (Request $request) {
         try {
             // This will throw a DivisionByZeroError
@@ -52,4 +66,4 @@ Route::middleware(['language'])->group(function () {
 
         // Other admin routes can go here
     });
-});
+// });
