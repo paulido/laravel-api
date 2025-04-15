@@ -238,6 +238,44 @@
                 }
             }
         },
+        "/api/email/verify/{id}/{hash}": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Verify user email address",
+                "operationId": "1c7d56f605f7cd618faa3b5e5ab8ee7a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email verified successfully"
+                    },
+                    "400": {
+                        "description": "Invalid verification link"
+                    },
+                    "403": {
+                        "description": "Email already verified"
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [

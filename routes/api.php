@@ -1,15 +1,14 @@
 <?php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\TranslationController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
-
-
-// Route::middleware(['language'])->group(function () {
+Route::middleware(['language'])->group(function () {
 
     // Public Routes
     Route::post("register", [AuthController::class, "register"]);
@@ -19,24 +18,23 @@ use Illuminate\Support\Facades\Route;
     Route::post('/password/email', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/verify-email', [AuthController::class, 'verifyEmail']);
     Route::post('/password/reset', [AuthController::class, 'resetPassword'])->name('password.reset');
-    Route::resource('users', UserController::class);
-
     // Handle when user click link in email
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
-    ->middleware('signed')->name('verification.verify');
-
+        ->middleware('signed')->name('verification.verify');
     // Resent verification email link
     Route::post('/resent-email', [AuthController::class, 'resendVerficationEmail'])->middleware('throttle:6:1');
 
+    Route::resource('users', UserController::class);
 
-    // Route::get('/test', function (Request $request) {
-    //     return response()->json(formatCurrency2(5000));
-    // });
-    Route::get("test", [AuthController::class, "money"]);
+    Route::get('/translations',  [TranslationController::class, 'index']);
+
+    Route::get('/currency', function () {
+        return response()->json(formatCurrency(5000));
+    });
+
     Route::get("users", [UserController::class, "index"]);
     Route::get('/error', function (Request $request) {
         try {
-            // This will throw a DivisionByZeroError
             return response()->json(10 / 0);
         } catch (\Exception $e) {
             Log::error('error Ido: ' . $e->getMessage());
@@ -64,6 +62,5 @@ use Illuminate\Support\Facades\Route;
             return response()->json(['message' => 'Welcome to the admin dashboard!']);
         });
 
-        // Other admin routes can go here
     });
-// });
+});

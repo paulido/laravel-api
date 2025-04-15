@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'languages' => ['fr', 'en'],
+    'languages' => ['fr', 'en'],  # Availlable language
     
     'locale' => env('APP_LOCALE', 'en'),
 

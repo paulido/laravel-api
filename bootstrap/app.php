@@ -38,29 +38,29 @@ return Application::configure(basePath: dirname(__DIR__))
             if($e instanceof ValidationException){  // global validation exception handling
                 return response()->json([
                     'status' => 422,
-                    'message' => __('messages.validation_failed'),
+                    'message' => __('validation_failed'),
                     'errors' => $e->errors(),
                 ], 422);
             }
             
             $status = $response->getStatusCode();
-            switch($status){
-                case 500:
-                    // Log::error('Server error IDO', $response->getContent());
-                    return response()->json([
-                        'message' => 'An error has occured. Please try again later',
-                    ], 400);
-                case 404 || 405 || 403:
-                    return response()->json([
-                        'message' => 'Not found',
-                    ], 404);
-                case 401:
-                    return response()->json([
-                        'message' => 'Not authenticated',
-                    ], 401);
-                default:
-                    return $response;
-            }
+            // switch($status){
+            //     case 500:
+            //         // Log::error('Server error IDO', $response->getContent());
+            //         return response()->json([
+            //             'message' => 'An error has occured. Please try again later',
+            //         ], 400);
+            //     case 404 || 405 || 403:
+            //         return response()->json([
+            //             'message' => 'Not found',
+            //         ], 404);
+            //     case 401:
+            //         return response()->json([
+            //             'message' => 'Not authenticated',
+            //         ], 401);
+            //     default:
+            //         return $response;
+            // }
         });
         
 

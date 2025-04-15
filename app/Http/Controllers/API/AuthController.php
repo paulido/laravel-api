@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -14,7 +13,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -48,23 +47,26 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 400,
-                'message' => __('messages.data_invalid'),
+                'message' => __('data_invalid'),
                 'errors' => $validator->errors(),
             ], 400);
         }
 
-        $user = User::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
+            $defaultRole = Role::firstOrCreate(['name' => 'user']);
+            $user->assignRole($defaultRole);
+            return $user;
+        });
 
-        $defaultRole = Role::firstOrCreate(['name' => 'user']);
-        $user->assignRole($defaultRole);
         $this->sendVerificationEmail($user);
         return response()->json([
             'status' => 201,
-            'message' =>  __('messages.request_successful'),
+            'message' => __('request_successful'),
             'data' => ['user' => $user],
         ], 201);
     }
@@ -95,7 +97,7 @@ class AuthController extends Controller
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'status' => 401,
-                'message' => __('messages.invalid_credentials'),
+                'message' => __('invalid_credentials'),
             ], 401);
         }
 
@@ -105,7 +107,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 200,
-            'message' => __('messages.login_successful'),
+            'message' => __('login_successful'),
             'data' => ['token' => $token, 'user' => $user],
         ], 200);
     }
@@ -124,7 +126,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
         return response()->json([
             'status' => 200,
-            'message' => __('messages.logout_successful'),
+            'message' => __('logout_successful'),
         ], 200);
     }
 
@@ -153,109 +155,9 @@ class AuthController extends Controller
         });
 
         return $response == Password::RESET_LINK_SENT
-            ? response()->json(['status' => __('messages.reset_link_sent')], 200)
-            : response()->json(['email' => __('messages.unable_to_send_reset_link')], 400);
+            ? response()->json(['status' => __('reset_link_sent')], 200)
+            : response()->json(['email' => __('unable_to_send_reset_link')], 400);
     }
-
-
-
-    private function sendVerificationEmail($user)
-    {
-
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1($user->email)]
-        );
-
-        Mail::to($user->email)->send(new \App\Mail\VerifyEmail($verificationUrl));
-    }
-
-    public function verifyEmail(Request $request, $id, $hash)
-    {
-        
-        $rules = [
-            'id' => 'required|exists:users,id',
-            'hash' => 'required|string',
-        ];
-    
-        Validator::make(['id' => $id, 'hash' => $hash], $rules);
-    
-        $user = User::find($id);
-    
-        if (!hash_equals(sha1($user->email), $hash)) {
-            Log::warning('Invalid verification link for user ID: ' . $id);
-            return redirect()->away(env('FRONTEND_URL'))->withErrors([
-                'status' => 400,
-                'errors' => ['email' => __('messages.email_verification_link_invalid')]
-            ]);
-        }
-    
-        $expires = $request->query('expires');
-        if (now()->timestamp > $expires) {
-            Log::warning('Verification URL has expired for user ID: ' . $id);
-            return redirect()->away(env('FRONTEND_URL'))->withErrors([
-                'status' => 400,
-                'errors' => ['email' => __('messages.verification_link_expired')]
-            ]);
-        }
-    
-        if (!$user->hasVerifiedEmail()) {
-            $user->markEmailAsVerified();
-            event(new Verified($user));
-            Log::info('Email verified for user ID: ' . $user->id);
-        } else {
-            Log::info('User already verified, ID: ' . $user->id);
-        }
-    
-        return redirect()->away(env('FRONTEND_URL'));
-    }
-    
-
-
-
-    public function resendVerficationEmail(Request $request)
-    {
-
-        
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ]);
-        
-
-        $user = User::where('email', $request->email)->first();
-
-        $executed = RateLimiter::attempt(
-            'send-message:'.$user->id,
-            $perMinute = 3,
-            function () use ($user) {
-                $this->sendVerificationEmail($user);
-            }
-        );
-
-         
-        if (! $executed) {
-          return response()->json([
-            'status' => 400,
-            'message' => __('messages.too_may_request')
-          ], 400);
-        }
-
-
-        if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'status' => 400,
-                'message' => __('messages.email_alread_verified')
-            ], 400);
-        }
-        
-        
-        return response()->json([
-            'status' => 200,
-            'message' => __('messages.verification_link_sent'),
-        ], 200);
-    }
-
 
     /**
      * @OA\Post(
@@ -277,7 +179,6 @@ class AuthController extends Controller
      */
     public function resetPassword(Request $request)
     {
-        Log::info($request->all());
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string|confirmed',
@@ -294,8 +195,8 @@ class AuthController extends Controller
         );
 
         return $response == Password::PASSWORD_RESET
-            ? response()->json(['status' => __('messages.password_reset_successful')], 200)
-            : response()->json(['email' => __('messages.unable_to_reset_password')], 400);
+            ? response()->json(['status' => __('password_reset_successful')], 200)
+            : response()->json(['email' => __('unable_to_reset_password')], 400);
     }
 
     /**
@@ -332,5 +233,56 @@ class AuthController extends Controller
         return response()->json([
             "data" => ['authorized' => $hasPermission]
         ]);
+    }
+
+    private function sendVerificationEmail($user)
+    {
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        Mail::to($user->email)->send(new \App\Mail\VerifyEmail($verificationUrl));
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/email/verify/{id}/{hash}",
+     *     tags={"Authentication"},
+     *     summary="Verify user email address",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="hash",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response=200, description="Email verified successfully"),
+     *     @OA\Response(response=400, description="Invalid verification link"),
+     *     @OA\Response(response=403, description="Email already verified")
+     * )
+     */
+    public function verify(Request $request, $id, $hash)
+    {
+        $user = User::findOrFail($id);
+
+        if (! hash_equals(sha1($user->email), $hash)) {
+            return response()->json(['message' => __('invalid_verification_link')], 400);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => __('already_verified')], 403);
+        }
+
+        $user->markEmailAsVerified();
+        event(new Verified($user));
+
+        return response()->json(['message' => __('email_verified')], 200);
     }
 }

@@ -18,10 +18,8 @@ class SetLocale
     {
         $locale = $request->header('Accept-Language');
         $locales = config('app')['languages'];
-        // Fallback to 'en' if the header is not set or invalid
-        $locale = in_array($locale, $locales) ? $locale : 'en';
+        $locale = in_array($locale, $locales) ? $locale : 'fr';
         App::setLocale($locale);
-
         
         return $next($request);
     }

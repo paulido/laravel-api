@@ -1,0 +1,68 @@
+version: '3.8'  # Version de la syntaxe Docker Compose
+
+services:
+  app:  # Service pour l'application Laravel
+    build:
+      context: .  # Utilise le répertoire courant comme contexte de construction
+      dockerfile: Dockerfile  # Spécifie le Dockerfile à utiliser
+    container_name: esiao_app  # Nom du conteneur
+    volumes:
+      - .:/var/www/html  # Synchronise le répertoire courant avec le conteneur
+    environment:
+      DB_CONNECTION: mysql  # Type de base de données
+      DB_HOST: db  # Nom du service de base de données
+      DB_PORT: 3306  # Port de la base de données
+      DB_DATABASE: siao_db  # Nom de la base de données
+      DB_USERNAME: siao_user  # Nom d'utilisateur pour la base de données
+      DB_PASSWORD: siao  # Mot de passe pour la base de données
+    depends_on:
+      - db  # Dépend du service de base de données
+    restart: always  # Redémarre toujours le conteneur
+
+  db:  # Service pour la base de données MySQL
+    image: mysql:8.0  # Image Docker à utiliser
+    container_name: mysql_db  # Nom du conteneur
+    environment:
+      MYSQL_DATABASE: siao_db  # Nom de la base de données par défaut
+      MYSQL_USER: siao_user  # Utilisateur de la base de données
+      MYSQL_PASSWORD: siao  # Mot de passe de l'utilisateur
+      MYSQL_ROOT_PASSWORD: root_password  # Mot de passe pour l'utilisateur root
+    volumes:
+      - mysql_data:/var/lib/mysql  # Volume pour la persistance des données
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]  # Vérifie si le service MySQL est opérationnel
+      interval: 30s  # Intervalle entre les vérifications
+      timeout: 10s  # Temps d'attente avant de considérer que la vérification a échoué
+      retries: 5  # Nombre de tentatives avant d'échouer
+      start_period: 30s  # Temps avant de commencer les vérifications
+    restart: always  # Redémarre toujours le conteneur
+
+  nginx:  # Service pour le serveur web Nginx
+    image: nginx:latest  # Image Docker à utiliser
+    container_name: nginx  # Nom du conteneur
+    ports:
+      - "8092:80"  # Mappe le port 80 du conteneur au port 8092 de l'hôte
+    volumes:
+      - .:/var/www/html  # Synchronise le répertoire courant avec le conteneur
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # Spécifie le fichier de configuration Nginx
+    depends_on:
+      - app  # Dépend du service de l'application
+    restart: always  # Redémarre toujours le conteneur
+
+  phpmyadmin:  # Service pour phpMyAdmin
+    image: phpmyadmin/phpmyadmin:latest  # Image Docker à utiliser
+    container_name: phpmyadmin  # Nom du conteneur
+    environment:
+      PMA_HOST: db  # Nom d'hôte de la base de données
+      PMA_USER: siao_user  # Utilisateur pour phpMyAdmin
+      PMA_PASSWORD: siao  # Mot de passe pour l'utilisateur
+      PMA_PORT: 3306  # Port de la base de données
+      MYSQL_ROOT_PASSWORD: root_password  # Mot de passe pour l'utilisateur root
+    ports:
+      - "8091:80"  # Mappe le port 80 du conteneur au port 8091 de l'hôte
+    depends_on:
+      - db  # Dépend du service de base de données
+    restart: always  # Redémarre toujours le conteneur
+
+volumes:
+  mysql_data:  # Volume pour persister les données de MySQL

@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'USD' => [
+    'en' => [
         'symbol' => '$',
         'name' => 'United States Dollar',
         'code' => 'USD',

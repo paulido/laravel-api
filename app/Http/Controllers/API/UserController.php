@@ -30,9 +30,20 @@ class UserController extends Controller
      *     ),
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::all();
+
+        // Vérifie si le paramètre 'all' est présent dans la requête
+        $getAllUsers = $request->query('all', false);  // Par défaut, c'est false (paginer)
+
+        if ($getAllUsers) {
+            // Récupérer tous les utilisateurs sans pagination
+            $users = User::orderBy('created_at', 'desc')->get();
+        } else {
+            // Récupérer les utilisateurs avec pagination (par exemple, 10 par page)
+            $users = User::orderBy('created_at', 'desc')->paginate(25);
+        }
+
         return response()->json([
             "status" => 200,
             "data" => ['users' => $users]
@@ -85,10 +96,12 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+
+        $request->validate(['email' => 'required|email|unique:users,email|max:255']);
         $user = User::create($request->all());
         return response()->json([
             "status" => 201,
-            "message" => __('messages.request_successful'),
+            "message" => 'Request successful',
             "data" => ['user' => $user]
         ], 201);
     }
@@ -121,7 +134,7 @@ class UserController extends Controller
         $user->update($request->all());
         return response()->json([
             "satus" => 200,
-            "message" => __('messages.request_successful'),
+            "message" => 'Request successful',
             "data" => ['user' => $user]
         ], 200);
     }
@@ -145,7 +158,7 @@ class UserController extends Controller
         User::findOrFail($id)->delete();
         return response()->json([
             "status" => 200,
-            "message" => __('messages.user_deleted'),
+            "message" => 'User deleted successfully',
         ], 200);
     }
 }
